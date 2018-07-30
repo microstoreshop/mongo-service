@@ -1,0 +1,66 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service-expose
+  namespace: default
+  labels:
+    app: mongo-service
+spec:
+  ports:
+  - name: mongo-service
+    protocol: TCP
+    port: 31712
+    targetPort: 27017
+    nodePort: 31712
+  selector:
+    app: mongo-service
+  type: NodePort
+  sessionAffinity: None
+  externalTrafficPolicy: Cluster
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+  labels:
+    app: mongo-service
+spec:
+  ports:
+  - port: 27017
+    targetPort: 27017
+    name: mongo-service
+  clusterIP: None
+  selector:
+    app: mongo-service
+---    
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: mongo-service
+spec:
+  serviceName: "mongo-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo-service
+  template:
+    metadata:
+      labels:
+        app: mongo-service
+    spec:
+      containers:
+      - resources:
+          requests:
+            cpu: 100m
+            memory: 192Mi 
+        name: mongo-service
+        image: mongo:3.3
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "dbpass"
+        - name: MYSQL_DATABASE
+          value: "dev"
+  podManagementPolicy: "Parallel"
